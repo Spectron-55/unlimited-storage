@@ -1,0 +1,48 @@
+version: '1.2'
+
+services:
+  db:
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${SQL_DATABASE}
+      MYSQL_USER: ${SQL_USER}
+    volumes:
+      - ${SQL_VOLUME}:/var/lib/mysql
+    ports:
+      - 3306
+    networks:
+      file_network:
+        ipv4_address: 10.5.0.5
+    command: --default-authentication-plugin=mysql_native_password --bind-address=0.0.0.0
+
+
+  app:
+    image: spectron55/unlimited-storage:v1.2
+    restart: always
+    depends_on:
+      - db
+    environment:
+      DB_HOST: "10.5.0.5"
+      DB_USER: ${SQL_USER}
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      DB_NAME: ${SQL_DATABASE}
+      DC_CHANNEL: ${DC_CHANNEL}
+      DC_TOKEN: ${DC_TOKEN}
+      AES_HEX_KEY: ${AES_HEX_KEY}
+    ports:
+      - "5005:5005"
+    networks:
+      file_network:
+        ipv4_address: 10.5.0.6
+    command: ["python", "website.py"]
+
+networks:
+  file_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.5.0.0/16
+          gateway: 10.5.0.1
